@@ -1,0 +1,68 @@
+@use "utils/variables";
+@use "utils/mixins";
+
+:root {
+  font-family: system-ui, sans-serif;
+  color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #0f1017;
+  color: #f4f4f8;
+}
+
+.app-root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-header,
+.app-footer {
+  padding: 1rem 2rem;
+  background: #181824;
+  border-bottom: 1px solid #2c2c3a;
+
+  &.app-footer {
+    border-top: 1px solid #2c2c3a;
+    border-bottom: none;
+    margin-top: auto;
+  }
+}
+
+.app-header__title {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+.app-header__subtitle {
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+.app-main {
+  padding: 1.5rem 2rem 2rem;
+}
+
+// Page layout
+.composer-page {
+  &__top {
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.35fr);
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  &__bottom {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+    gap: 1.5rem;
+  }
+}
