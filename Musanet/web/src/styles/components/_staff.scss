@@ -1,0 +1,18 @@
+/* Styles partially generated with AI assistance. */
+
+@use "../utils/variables" as vars;
+@use "../utils/mixins";
+
+.staff-view {
+  &__canvas-placeholder {
+    height: 260px;
+    border-radius: vars.$radius-md;
+    border: 1px dashed vars.$color-border-strong;
+    background: vars.$color-surface;
+    @include mixins.flex-center;
+    font-size: vars.$font-size-sm;
+    color: vars.$color-muted;
+    text-align: center;
+    padding: vars.$spacing-md;
+  }
+}

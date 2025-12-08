@@ -1,0 +1,35 @@
+/* Styles partially generated with AI assistance. */
+
+@use "../utils/variables" as vars;
+@use "../utils/mixins";
+
+.note-text-input {
+  &__label {
+    display: block;
+    margin-bottom: vars.$spacing-sm;
+    font-weight: 500;
+  }
+
+  &__textarea {
+    width: 100%;
+    padding: vars.$spacing-md;
+    border-radius: vars.$radius-md;
+    border: 1px solid vars.$color-border-strong;
+    background: vars.$color-surface;
+    color: vars.$color-text;
+    resize: vertical;
+    font-family: ui-monospace, "Courier New", monospace;
+    font-size: vars.$font-size-sm;
+    line-height: 1.4;
+
+    &:focus {
+      @include mixins.focus-ring;
+    }
+  }
+
+  &__hint {
+    margin-top: vars.$spacing-sm;
+    font-size: vars.$font-size-xs;
+    color: vars.$color-muted;
+  }
+}

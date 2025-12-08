@@ -1,6 +1,34 @@
-// example mixin, they should go here
-// @mixin center-flex {
-//   display: flex;
-//   align-items: center;
-//   justify-content: center;
-// }
+/* Styles partially generated with AI assistance. */
+
+@use "variables" as vars;
+
+@mixin card {
+  border-radius: vars.$radius-md;
+  border: 1px solid vars.$color-border-strong;
+  background: vars.$color-surface;
+}
+
+@mixin focus-ring {
+  outline: 2px solid vars.$color-accent;
+  outline-offset: 1px;
+}
+
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin pill-button {
+  border: 1px solid vars.$color-border-strong;
+  background: #1d1d2a;
+  color: vars.$color-text;
+  padding: vars.$spacing-sm vars.$spacing-lg;
+  border-radius: vars.$radius-pill;
+  cursor: pointer;
+  font-size: vars.$font-size-sm;
+
+  &:hover {
+    border-color: vars.$color-accent;
+  }
+}
