@@ -9,11 +9,14 @@ function App() {
     <div className="app-root">
       <Header />
       <main className="app-main">
-        <ComposerPage />
+        <div className="app-container">
+          <ComposerPage />
+        </div>
       </main>
       <Footer />
     </div>
   );
 }
+
 
 export default App;

@@ -1,0 +1,57 @@
+/* Styles partially generated with AI assistance. */
+
+@use "../utils/variables" as vars;
+
+.app-header,
+.app-footer {
+  padding: vars.$spacing-lg vars.$spacing-xl;
+  background: vars.$color-surface-alt;
+  border-bottom: 1px solid vars.$color-border;
+}
+
+.app-footer {
+  border-top: 1px solid vars.$color-border;
+  border-bottom: none;
+  margin-top: auto;
+
+  small {
+    font-size: vars.$font-size-xs;
+    color: vars.$color-muted;
+  }
+}
+
+.app-container {
+  width: 100%;
+  margin: 0 auto;
+}
+
+.app-header__title {
+  margin: 0;
+  font-size: vars.$font-size-lg;
+}
+
+.app-header__subtitle {
+  font-size: vars.$font-size-xs;
+  color: vars.$color-muted;
+}
+
+.app-main {
+  padding: vars.$spacing-xl vars.$spacing-xl vars.$spacing-xl;
+}
+
+/* Page layout */
+
+.composer-page {
+  &__top {
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.35fr);
+    gap: vars.$spacing-xl;
+    margin-bottom: vars.$spacing-xl;
+  }
+
+  &__bottom {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+    gap: vars.$spacing-xl;
+  }
+}
