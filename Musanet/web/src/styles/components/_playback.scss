@@ -14,3 +14,20 @@
     @include mixins.pill-button;
   }
 }
+
+.duration-toolbar {
+  display: flex;
+  gap: vars.$spacing-xs;
+  margin-bottom: vars.$spacing-sm;
+
+  &__button {
+    @include mixins.pill-button;
+    font-size: vars.$font-size-xs;
+    padding-inline: vars.$spacing-sm;
+
+    &--active {
+      border-color: vars.$color-accent;
+      background: vars.$color-surface-alt;
+    }
+  }
+}

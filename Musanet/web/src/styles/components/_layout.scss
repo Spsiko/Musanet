@@ -93,8 +93,6 @@
     border: 1px solid vars.$color-border;
     padding: vars.$spacing-sm;
     background: vars.$color-surface;
-    /* If you later want scroll: uncomment this */
-    /* overflow-x: auto; */
   }
 
   &__input-header {

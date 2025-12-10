@@ -12,6 +12,7 @@ interface Props {
   tempo: number;
   onTempoChange: (tempo: number) => void;
   composition: Composition | null;
+  hasErrors: boolean;
   onActiveNoteChange?: (noteId: string | null) => void;
   onClearSelection?: () => void;
 }
@@ -20,9 +21,13 @@ export default function TransportControls({
   tempo,
   onTempoChange,
   composition,
+  hasErrors,
   onActiveNoteChange,
   onClearSelection,
 }: Props) {
+  const hasComposition = !!composition && composition.measures.length > 0;
+  const canPlay = hasComposition && !hasErrors;
+
   const handlePlay = () => {
     if (!composition) return;
     if (onClearSelection) onClearSelection();
@@ -45,7 +50,7 @@ export default function TransportControls({
         className="transport-controls__button"
         type="button"
         onClick={handlePlay}
-        disabled={!composition || composition.measures.length === 0}
+        disabled={!canPlay}
       >
         Play
       </button>
@@ -53,6 +58,7 @@ export default function TransportControls({
         className="transport-controls__button"
         type="button"
         onClick={handlePause}
+        disabled={!hasComposition}
       >
         Pause
       </button>
@@ -60,6 +66,7 @@ export default function TransportControls({
         className="transport-controls__button"
         type="button"
         onClick={handleStop}
+        disabled={!hasComposition}
       >
         Stop
       </button>
