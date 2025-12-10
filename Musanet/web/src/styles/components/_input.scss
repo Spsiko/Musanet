@@ -22,7 +22,8 @@
     font-size: vars.$font-size-sm;
     line-height: 1.4;
 
-    &:focus {
+    &:focus-visible {
+      outline: none;
       @include mixins.focus-ring;
     }
   }
@@ -33,10 +34,11 @@
     color: vars.$color-muted;
   }
 
-    &__errors {
+  &__errors {
     margin-top: vars.$spacing-sm;
     padding-left: 1.1rem;
     font-size: vars.$font-size-xs;
     color: #f97373;
   }
 }
+

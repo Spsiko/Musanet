@@ -7,10 +7,67 @@
   @include mixins.card;
   padding: vars.$spacing-md vars.$spacing-lg vars.$spacing-lg;
 
-  h3 {
-    margin-top: 0;
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     margin-bottom: vars.$spacing-sm;
-    font-size: vars.$font-size-md;
+  }
+
+  &__save-button {
+    @include mixins.pill-button;
+    font-size: vars.$font-size-xs;
+    padding: vars.$spacing-xs vars.$spacing-md;
+  }
+
+  &__items {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  &__item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: vars.$spacing-sm 0;
+    border-top: 1px solid vars.$color-border;
+
+    &:first-of-type {
+      border-top: none;
+    }
+  }
+
+  &__meta {
+    display: flex;
+    flex-direction: column;
+    gap: vars.$spacing-xs;
+  }
+
+  &__title {
+    font-size: vars.$font-size-sm;
+    word-break: break-word;
+  }
+
+
+  &__date {
+    font-size: vars.$font-size-xs;
+    color: vars.$color-muted;
+  }
+
+  &__actions {
+    display: flex;
+    gap: vars.$spacing-xs;
+  }
+
+  &__button {
+    @include mixins.pill-button;
+    font-size: vars.$font-size-xs;
+    padding: vars.$spacing-xs vars.$spacing-sm;
+
+    &--danger {
+      border-color: #f97373;
+    }
   }
 
   &__empty {

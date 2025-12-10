@@ -12,46 +12,67 @@ interface Props {
   tempo: number;
   onTempoChange: (tempo: number) => void;
   composition: Composition | null;
+  onActiveNoteChange?: (noteId: string | null) => void;
+  onClearSelection?: () => void;
 }
 
 export default function TransportControls({
   tempo,
   onTempoChange,
   composition,
+  onActiveNoteChange,
+  onClearSelection,
 }: Props) {
   const handlePlay = () => {
     if (!composition) return;
-    void playComposition(composition, tempo);
+    if (onClearSelection) onClearSelection();
+    if (onActiveNoteChange) onActiveNoteChange(null);
+    void playComposition(composition, tempo, onActiveNoteChange);
   };
 
+  const handlePause = () => {
+    pausePlayback();
+  };
+
+  const handleStop = () => {
+    stopPlayback(onActiveNoteChange);
+    if (onClearSelection) onClearSelection();
+  };
+  
   return (
     <div className="transport-controls">
       <button
         className="transport-controls__button"
+        type="button"
         onClick={handlePlay}
-        disabled={!composition}
+        disabled={!composition || composition.measures.length === 0}
       >
         Play
       </button>
-
-      <button className="transport-controls__button" onClick={pausePlayback}>
+      <button
+        className="transport-controls__button"
+        type="button"
+        onClick={handlePause}
+      >
         Pause
       </button>
-
-      <button className="transport-controls__button" onClick={stopPlayback}>
+      <button
+        className="transport-controls__button"
+        type="button"
+        onClick={handleStop}
+      >
         Stop
       </button>
-
-      <span style={{ marginLeft: "1rem", fontSize: "0.85rem" }}>
-        Tempo:
+      <span style={{ marginLeft: "0.75rem", fontSize: "0.8rem" }}>
+        Tempo:{" "}
         <input
           type="number"
           min={40}
           max={220}
           value={tempo}
-          onChange={(e) => onTempoChange(Number(e.target.value))}
-          style={{ width: "4rem", marginLeft: "0.3rem" }}
-        />
+          onChange={(e) => onTempoChange(Number(e.target.value) || 0)}
+          style={{ width: "4rem" }}
+        />{" "}
         bpm
       </span>
     </div>

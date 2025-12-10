@@ -5,7 +5,7 @@
 
 .staff-view {
   &__canvas-placeholder {
-    height: 260px;
+    height: vars.$staff-height;
     border-radius: vars.$radius-md;
     border: 1px dashed vars.$color-border-strong;
     background: vars.$color-surface;
@@ -26,6 +26,28 @@
     svg text {
       stroke: vars.$color-text;
       fill: vars.$color-text;
+    }
+
+    // Playback active note = green
+    svg g[data-active-note="true"] path,
+    svg g[data-active-note="true"] line,
+    svg g[data-active-note="true"] rect,
+    svg g[data-active-note="true"] ellipse,
+    svg g[data-active-note="true"] circle,
+    svg g[data-active-note="true"] text {
+      stroke: #22c55e !important;
+      fill: #22c55e !important;
+    }
+
+    // Selected note (for editing) = yellow
+    svg g[data-selected-note="true"] path,
+    svg g[data-selected-note="true"] line,
+    svg g[data-selected-note="true"] rect,
+    svg g[data-selected-note="true"] ellipse,
+    svg g[data-selected-note="true"] circle,
+    svg g[data-selected-note="true"] text {
+      stroke: #eab308 !important;
+      fill: #eab308 !important;
     }
   }
 }

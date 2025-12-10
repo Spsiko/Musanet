@@ -1,57 +1,125 @@
 /* Styles partially generated with AI assistance. */
 
 @use "../utils/variables" as vars;
+@use "../utils/mixins";
 
-.app-header,
-.app-footer {
-  padding: vars.$spacing-lg vars.$spacing-xl;
-  background: vars.$color-surface-alt;
-  border-bottom: 1px solid vars.$color-border;
+/* Page shell layout */
+
+.app-root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: vars.$color-bg;
 }
 
-.app-footer {
-  border-top: 1px solid vars.$color-border;
-  border-bottom: none;
-  margin-top: auto;
-
-  small {
-    font-size: vars.$font-size-xs;
-    color: vars.$color-muted;
-  }
+.app-main {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  padding: vars.$spacing-lg vars.$spacing-md;
+  box-sizing: border-box;
 }
 
+/* Center the composer content but keep header/footer full width */
 .app-container {
   width: 100%;
+  max-width: 1200px;
   margin: 0 auto;
+  box-sizing: border-box;
+}
+
+/* Header & footer */
+
+.app-header {
+  width: 100%;
+  box-sizing: border-box;
+  @include mixins.card;
+  padding: vars.$spacing-sm vars.$spacing-lg;
+  margin: 0 0 vars.$spacing-lg;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: vars.$color-surface-alt;
 }
 
 .app-header__title {
-  margin: 0;
   font-size: vars.$font-size-lg;
 }
 
 .app-header__subtitle {
-  font-size: vars.$font-size-xs;
+  font-size: vars.$font-size-sm;
   color: vars.$color-muted;
 }
 
-.app-main {
-  padding: vars.$spacing-xl vars.$spacing-xl vars.$spacing-xl;
+.app-footer {
+  width: 100%;
+  box-sizing: border-box;
+  @include mixins.card;
+  padding: vars.$spacing-sm vars.$spacing-lg;
+  margin-top: vars.$spacing-md;
+  font-size: vars.$font-size-xs;
+  color: vars.$color-muted;
+  text-align: center;
+  background: vars.$color-surface-alt;
 }
 
-/* Page layout */
+/* Composer page layout */
 
 .composer-page {
+  width: 100%;
+
   &__top {
     display: grid;
-    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.35fr);
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
     gap: vars.$spacing-xl;
     margin-bottom: vars.$spacing-xl;
   }
 
   &__bottom {
-    display: grid;
-    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
-    gap: vars.$spacing-xl;
+    margin-top: vars.$spacing-lg;
+  }
+
+  &__score {
+    margin-top: vars.$spacing-lg;
+
+    h2 {
+      margin: 0 0 vars.$spacing-sm;
+    }
+  }
+
+  &__score-inner {
+    border-radius: vars.$radius-md;
+    border: 1px solid vars.$color-border;
+    padding: vars.$spacing-sm;
+    background: vars.$color-surface;
+    /* If you later want scroll: uncomment this */
+    /* overflow-x: auto; */
+  }
+
+  &__input-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: vars.$spacing-md;
+    margin-bottom: vars.$spacing-sm;
+  }
+
+  &__title-input {
+    flex: 0 0 220px;
+    padding: vars.$spacing-sm vars.$spacing-md;
+    border-radius: vars.$radius-sm;
+    border: 1px solid vars.$color-border-strong;
+    background: vars.$color-surface;
+    color: vars.$color-text;
+    font-size: vars.$font-size-sm;
+  }
+}
+
+/* Responsive tweaks */
+
+@media (max-width: 900px) {
+  .composer-page__top {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

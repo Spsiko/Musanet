@@ -21,7 +21,7 @@
 
 @mixin pill-button {
   border: 1px solid vars.$color-border-strong;
-  background: #1d1d2a;
+  background: vars.$color-surface-alt;
   color: vars.$color-text;
   padding: vars.$spacing-sm vars.$spacing-lg;
   border-radius: vars.$radius-pill;
@@ -32,3 +32,4 @@
     border-color: vars.$color-accent;
   }
 }
+

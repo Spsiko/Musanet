@@ -1,10 +1,9 @@
-import React from "react";
-import ComposerPage from "./pages/ComposerPage";
 import Header from "./components/layout/Header";
 import Footer from "./components/layout/Footer";
+import ComposerPage from "./pages/ComposerPage";
 import "./styles/globals.scss";
 
-function App() {
+export default function App() {
   return (
     <div className="app-root">
       <Header />
@@ -17,6 +16,3 @@ function App() {
     </div>
   );
 }
-
-
-export default App;
