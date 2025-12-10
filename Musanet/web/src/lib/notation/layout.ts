@@ -1,4 +1,4 @@
-/* Layout helpers partially generated with AI assistance. */
+// Layout helpers partially generated with AI assistance.
 
 export interface StaffLayoutConfig {
   /** Minimum SVG height for the staff area in pixels. */
@@ -17,7 +17,8 @@ export const STAFF_LAYOUT: StaffLayoutConfig = {
   minHeight: 260,
   marginX: 10,
   marginTop: 40,
-  minMeasureWidth: 80,
+  // bump this so dense measures have room
+  minMeasureWidth: 500,
   fallbackWidth: 700,
 };
 
@@ -29,28 +30,36 @@ export function computeStaffDimensions(
   containerWidth: number | undefined,
   measureCount: number
 ) {
-  const width =
+  const {
+    minHeight,
+    marginX,
+    marginTop,
+    minMeasureWidth,
+    fallbackWidth,
+  } = STAFF_LAYOUT;
+
+  const safeContainerWidth =
     typeof containerWidth === "number" && containerWidth > 0
       ? containerWidth
-      : STAFF_LAYOUT.fallbackWidth;
+      : fallbackWidth;
 
-  const height = STAFF_LAYOUT.minHeight;
-  const leftMargin = STAFF_LAYOUT.marginX;
-  const topY = STAFF_LAYOUT.marginTop;
-
-  const availableWidth = width - STAFF_LAYOUT.marginX * 2;
   const safeMeasureCount = Math.max(1, measureCount);
 
-  const measureWidth = Math.max(
-    STAFF_LAYOUT.minMeasureWidth,
-    availableWidth / safeMeasureCount
-  );
+  // Give each measure more horizontal room so notes don’t overlap.
+  const baseMeasureWidth = Math.max(minMeasureWidth, 180);
+
+  const contentWidth = marginX * 2 + baseMeasureWidth * safeMeasureCount;
+
+  // SVG can be wider than the container; scrollbar handles that.
+  const width = Math.max(safeContainerWidth, contentWidth);
+  const height = minHeight;
 
   return {
     width,
     height,
-    leftMargin,
-    topY,
-    measureWidth,
+    topY: marginTop,
+    leftMargin: marginX,
+    rightMargin: marginX,
+    measureWidth: baseMeasureWidth,
   };
 }

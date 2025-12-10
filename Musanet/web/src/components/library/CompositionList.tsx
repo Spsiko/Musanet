@@ -8,6 +8,7 @@ interface Props {
   onSaveCurrent: () => void;
   onLoad: (id: string) => void;
   onDelete: (id: string) => void;
+  canSave: boolean;
 }
 
 function formatDate(iso: string) {
@@ -21,6 +22,7 @@ export default function CompositionList({
   onSaveCurrent,
   onLoad,
   onDelete,
+  canSave,
 }: Props) {
   return (
     <div className="composition-list">
@@ -30,6 +32,7 @@ export default function CompositionList({
           type="button"
           className="composition-list__save-button"
           onClick={onSaveCurrent}
+          disabled={!canSave}
         >
           Save current
         </button>

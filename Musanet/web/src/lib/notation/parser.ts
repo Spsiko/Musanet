@@ -35,6 +35,7 @@ function isValidDuration(token: string): token is NoteDuration {
  * Examples: C4, D#5, Bb3
  */
 const PITCH_REGEX = /^([A-Ga-g])(#{1}|b{1})?(\d)$/;
+const TS_PREFIX = /^(\d+)\/(\d+)\s*\|\s*(.*)$/;
 
 function isValidPitch(token: string): boolean {
   return PITCH_REGEX.test(token);
@@ -46,18 +47,50 @@ function nextNoteId(): string {
   return `note-${noteCounter}`;
 }
 
-function parseLineToMeasure(line: string, lineIndex: number, errors: string[]): Measure | null {
+function parseLineToMeasure(
+  line: string,
+  lineIndex: number,
+  errors: string[]
+): Measure | null {
   const trimmed = line.trim();
   if (!trimmed) {
     return null;
   }
 
-  const tokens = trimmed.split(/\s+/);
+  // Default time signature
+  let timeSignature = "4/4";
+  let notesPart = trimmed;
+
+  // Optional "X/Y |" prefix
+  const tsMatch = trimmed.match(TS_PREFIX);
+  if (tsMatch) {
+    const [, numStr, denStr, rest] = tsMatch;
+    const num = Number(numStr);
+    const den = Number(denStr);
+
+    if (!Number.isNaN(num) && !Number.isNaN(den) && num > 0 && den > 0) {
+      timeSignature = `${num}/${den}`;
+      notesPart = rest.trim();
+    } else {
+      errors.push(
+        `Line ${lineIndex + 1}: invalid time signature "${numStr}/${denStr}".`
+      );
+      // Still try to parse notes in the rest of the line
+      notesPart = rest.trim();
+    }
+  }
+
+  if (!notesPart) {
+    // Line had only a time signature and no notes
+    return null;
+  }
+
+  const tokens = notesPart.split(/\s+/);
   if (tokens.length % 2 !== 0) {
     errors.push(
       `Line ${lineIndex + 1}: expected pairs of "<pitch> <duration>", but got an odd number of tokens (${tokens.length}).`
     );
-    return null;
+    // We'll still try to parse what we can
   }
 
   const notes: Note[] = [];
@@ -65,6 +98,11 @@ function parseLineToMeasure(line: string, lineIndex: number, errors: string[]): 
   for (let i = 0; i < tokens.length; i += 2) {
     const pitchToken = tokens[i];
     const durToken = tokens[i + 1];
+
+    if (!pitchToken || !durToken) {
+      // Handles odd token count case
+      break;
+    }
 
     if (!isValidPitch(pitchToken)) {
       errors.push(
@@ -94,16 +132,15 @@ function parseLineToMeasure(line: string, lineIndex: number, errors: string[]): 
     return null;
   }
 
-  // For now, we assume everything is in 4/4.
-  // If you add explicit time signatures later, this is where you parse them.
   const measure: Measure = {
     id: `measure-${lineIndex + 1}`,
-    timeSignature: "4/4",
+    timeSignature,
     notes,
   };
 
   return measure;
 }
+
 
 /**
  * Parse a freeform text block into a Composition.

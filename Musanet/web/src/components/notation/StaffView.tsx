@@ -11,13 +11,14 @@ import {
   Accidental,
 } from "vexflow";
 import { computeStaffDimensions } from "../../lib/notation/layout";
+import { stepPitchByDegree, clampPitch } from "../../lib/notation/pitch";
 
 interface StaffViewProps {
   composition: Composition | null;
   activeNoteId?: string | null;
   selectedNoteId?: string | null;
   onNoteClick?: (noteId: string) => void;
-  onBackgroundClick?: () => void;
+  onBackgroundClick?: (pitch: string) => void;
 }
 
 const VF_DURATION_MAP: Record<NoteDuration, string> = {
@@ -62,7 +63,7 @@ function noteToVexflow(note: Note) {
 /** Render an empty staff so the user can see/click even with no notes. */
 function renderEmptyStaff(container: HTMLDivElement) {
   const { width, height, leftMargin, topY, measureWidth } =
-    computeStaffDimensions(container.clientWidth, 1);
+    computeStaffDimensions(container.clientWidth || undefined, 1);
 
   const renderer = new Renderer(container, Renderer.Backends.SVG);
   renderer.resize(width, height);
@@ -90,7 +91,7 @@ function renderCompositionToContainer(
   }
 
   const { width, height, leftMargin, topY, measureWidth } =
-    computeStaffDimensions(container.clientWidth, measures.length);
+    computeStaffDimensions(container.clientWidth || undefined, measures.length);
 
   const renderer = new Renderer(container, Renderer.Backends.SVG);
   renderer.resize(width, height);
@@ -105,8 +106,14 @@ function renderCompositionToContainer(
     const x = leftMargin + index * measureWidth;
 
     const stave = new Stave(x, topY, measureWidth);
-    if (index === 0) {
-      stave.addClef("treble").addTimeSignature(measure.timeSignature);
+   if (index === 0) {
+      stave.addClef("treble");
+      stave.addTimeSignature(measure.timeSignature);
+    } else {
+      const prevTS = measures[index - 1].timeSignature;
+      if (measure.timeSignature !== prevTS) {
+        stave.addTimeSignature(measure.timeSignature);
+      }
     }
     stave.setContext(context).draw();
     staves.push(stave);
@@ -199,8 +206,18 @@ function StaffView({
       return;
     }
 
-    if (onBackgroundClick) {
-      onBackgroundClick();
+   if (onBackgroundClick && containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      const clickY = e.clientY - rect.top;
+      const centerY = rect.height / 2;
+      const pixelsPerStep = 8;
+
+      const delta = centerY - clickY;
+      const steps = Math.round(delta / pixelsPerStep);
+
+      const rawPitch = stepPitchByDegree("C4", steps);
+      const pitch = clampPitch(rawPitch);
+      onBackgroundClick(pitch);
     }
   };
 
