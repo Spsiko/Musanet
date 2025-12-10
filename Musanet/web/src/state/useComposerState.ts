@@ -66,7 +66,7 @@ export function useComposerState(): UseComposerState {
     const text = compositionToText(updated);
     setRawInput(text);
   };
-
+  
   const saveCurrent = () => {
     if (!rawInput.trim()) return;
 

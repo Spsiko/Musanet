@@ -7,6 +7,10 @@ import TransportControls from "../components/playback/TransportControls";
 import CompositionList from "../components/library/CompositionList";
 import { useComposerState } from "../state/useComposerState";
 import type { Composition } from "../lib/notation/model";
+import {
+  deleteNoteById,
+  appendNoteToLastMeasure,
+} from "../lib/notation/edit";
 
 function ComposerPage() {
   const {
@@ -37,28 +41,21 @@ function ComposerPage() {
   };
 
   const handleBackgroundClick = () => {
-    if (!composition) return;
+    // If there is no composition yet, create the first note via text.
+    if (!composition) {
+      setRawInput("C4 q");
+      return;
+    }
+
     updateComposition((comp: Composition): Composition => {
-      if (comp.measures.length === 0) return comp;
-
-      const lastIndex = comp.measures.length - 1;
-      const last = comp.measures[lastIndex];
-
       const newNote = {
         id: `ui-${Math.random().toString(36).slice(2)}`,
         pitch: "C4",
         duration: "q" as const,
       };
-
-      const newMeasures = comp.measures.slice();
-      newMeasures[lastIndex] = {
-        ...last,
-        notes: [...last.notes, newNote],
-      };
-
-      return { ...comp, measures: newMeasures };
+      return appendNoteToLastMeasure(comp, newNote);
     });
-  };
+  };;
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (!selectedNoteId) return;
@@ -68,14 +65,7 @@ function ComposerPage() {
       if (!composition) return;
 
       updateComposition((comp: Composition): Composition => {
-        const newMeasures = comp.measures
-          .map((m) => ({
-            ...m,
-            notes: m.notes.filter((n) => n.id !== selectedNoteId),
-          }))
-          .filter((m) => m.notes.length > 0);
-
-        return { ...comp, measures: newMeasures };
+        return deleteNoteById(comp, selectedNoteId);
       });
 
       setSelectedNoteId(null);

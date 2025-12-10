@@ -3,7 +3,11 @@
 import * as Tone from "tone";
 import type { Composition, NoteDuration } from "../notation/model";
 
-const DURATION_BEATS: Record<NoteDuration, number> = {
+/**
+ * Mapping from symbolic durations to beats.
+ * Extend here later if you add dotted durations, etc.
+ */
+export const DURATION_BEATS: Record<NoteDuration, number> = {
   w: 4,
   h: 2,
   q: 1,
@@ -11,53 +15,81 @@ const DURATION_BEATS: Record<NoteDuration, number> = {
   s: 0.25,
 };
 
-interface Event {
+export interface PlaybackEvent {
   timeSeconds: number;
   durationSeconds: number;
   pitch: string;
   noteId: string;
 }
 
-function buildSchedule(comp: Composition, tempo: number): Event[] {
-  const secPerBeat = 60 / tempo;
-  const schedule: Event[] = [];
+/**
+ * Build a flat, time-ordered schedule of playback events
+ * from a Composition and a tempo in BPM.
+ *
+ * Pure function: perfect for unit tests.
+ */
+export function buildSchedule(
+  comp: Composition,
+  tempo: number
+): PlaybackEvent[] {
+  if (!comp || comp.measures.length === 0) return [];
 
+  const secPerBeat = 60 / tempo;
+  const events: PlaybackEvent[] = [];
   let beatPos = 0;
 
   for (const measure of comp.measures) {
     for (const note of measure.notes) {
       const beats = DURATION_BEATS[note.duration] ?? 1;
-      schedule.push({
-        timeSeconds: beatPos * secPerBeat,
-        durationSeconds: beats * secPerBeat,
+      const timeSeconds = beatPos * secPerBeat;
+      const durationSeconds = beats * secPerBeat;
+
+      events.push({
+        timeSeconds,
+        durationSeconds,
         pitch: note.pitch,
         noteId: note.id,
       });
+
       beatPos += beats;
     }
   }
 
-  return schedule;
+  return events;
 }
 
 let synth: Tone.Synth | null = null;
 
 async function ensureSynth() {
   await Tone.start();
-  if (!synth) synth = new Tone.Synth().toDestination();
+  if (!synth) {
+    synth = new Tone.Synth().toDestination();
+  }
 }
 
+function getTransport() {
+  return Tone.getTransport();
+}
+
+/**
+ * High-level playback API used by the UI.
+ *
+ * - Prepares Tone.Transport
+ * - Uses `buildSchedule` to derive events
+ * - Calls `onNoteChange` as each note starts and when playback ends
+ */
 export async function playComposition(
   comp: Composition,
   tempo: number,
   onNoteChange?: (noteId: string | null) => void
-) {
+): Promise<void> {
   if (!comp || comp.measures.length === 0) return;
 
   await ensureSynth();
 
-  const transport = Tone.getTransport();
+  const transport = getTransport();
 
+  // Reset transport and clear previous events
   transport.stop();
   transport.cancel();
   transport.position = 0;
@@ -82,14 +114,19 @@ export async function playComposition(
   transport.start();
 }
 
-export function pausePlayback() {
-  const transport = Tone.getTransport();
+export function pausePlayback(): void {
+  const transport = getTransport();
   transport.pause();
 }
 
-export function stopPlayback(onNoteChange?: (noteId: string | null) => void) {
-  const transport = Tone.getTransport();
+export function stopPlayback(
+  onNoteChange?: (noteId: string | null) => void
+): void {
+  const transport = getTransport();
   transport.stop();
   transport.position = 0;
-  if (onNoteChange) onNoteChange(null);
+
+  if (onNoteChange) {
+    onNoteChange(null);
+  }
 }
