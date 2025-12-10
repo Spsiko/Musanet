@@ -47,6 +47,34 @@ function nextNoteId(): string {
   return `note-${noteCounter}`;
 }
 
+/** Rough column index (1-based) of a token in a line. */
+function getTokenColumn(line: string, token: string): number {
+  const idx = line.indexOf(token);
+  return idx === -1 ? 1 : idx + 1;
+}
+
+function makeCaretLine(column: number): string {
+  if (column <= 1) return "^";
+  return `${" ".repeat(column - 1)}^`;
+}
+
+function pushErrorWithContext(
+  errors: string[],
+  line: string,
+  lineIndex: number,
+  column: number,
+  message: string
+) {
+  const lineNumber = lineIndex + 1;
+  errors.push(
+    [
+      `Line ${lineNumber}, col ${column}: ${message}`,
+      `  ${line}`,
+      `  ${makeCaretLine(column)}`,
+    ].join("\n")
+  );
+}
+
 function parseLineToMeasure(
   line: string,
   lineIndex: number,
@@ -86,11 +114,30 @@ function parseLineToMeasure(
   }
 
   const tokens = notesPart.split(/\s+/);
+
+  // We'll also build a normalized version of the line that
+  // all our column math is based on.
+  const normalizedLine = tokens.join(" ");
+
+  // Odd number of tokens: last token has no duration
   if (tokens.length % 2 !== 0) {
+    const lastIndex = tokens.length - 1;
+    const lastToken = tokens[lastIndex];
+
+    // Compute column where the orphan token starts (1-based)
+    const prefix = tokens.slice(0, lastIndex).join(" ");
+    const col = prefix.length === 0 ? 1 : prefix.length + 1;
+
+    const caretLine = " ".repeat(col - 1) + "^";
+
     errors.push(
-      `Line ${lineIndex + 1}: expected pairs of "<pitch> <duration>", but got an odd number of tokens (${tokens.length}).`
+      [
+        `Line ${lineIndex + 1}, col ${col}: expected pairs of "<pitch> <duration>", but got an odd number of tokens (${tokens.length}).`,
+        normalizedLine,
+        caretLine,
+      ].join("\n")
     );
-    // We'll still try to parse what we can
+    // We'll still try to parse what we can below.
   }
 
   const notes: Note[] = [];
@@ -148,6 +195,7 @@ function parseLineToMeasure(
  * Syntax (current MVP):
  *   - One measure per line.
  *   - Each line contains pairs of "<pitch> <duration>".
+ *   - Optional prefix: "X/Y |" for time signature (e.g. "3/4 | C4 q D4 q E4 q").
  *   - Pitch: C4, D#5, Bb3, etc.
  *   - Duration: w, h, q, e, s.
  */

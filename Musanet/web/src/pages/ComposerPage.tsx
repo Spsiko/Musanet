@@ -14,9 +14,8 @@ import {
   updateNoteDurationById,
 } from "../lib/notation/edit";
 
-
 function ComposerPage() {
-  const {
+    const {
     rawInput,
     setRawInput,
     tempo,
@@ -30,6 +29,8 @@ function ComposerPage() {
     loadFromLibrary,
     deleteFromLibrary,
     updateComposition,
+    currentId,
+    isDirty,
   } = useComposerState();
 
   const [activeNoteId, setActiveNoteId] = useState<string | null>(null);
@@ -48,7 +49,6 @@ function ComposerPage() {
     { label: "e", value: "e" },
     { label: "s", value: "s" },
   ];
-
 
   const handleSelectNote = (noteId: string) => {
     setSelectedNoteId(noteId);
@@ -73,7 +73,7 @@ function ComposerPage() {
       };
       return appendNoteToLastMeasure(comp, newNote);
     });
-  };;
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (!selectedNoteId) return;
@@ -106,7 +106,7 @@ function ComposerPage() {
 
     // Change duration with number keys 1–5
     // 1: whole, 2: half, 3: quarter, 4: eighth, 5: sixteenth
-    const durationMap: Record<string, "w" | "h" | "q" | "e" | "s"> = {
+    const durationMap: Record<string, NoteDuration> = {
       "1": "w",
       "2": "h",
       "3": "q",
@@ -126,7 +126,6 @@ function ComposerPage() {
       setCurrentDuration(newDuration);
     }
   };
-
 
   return (
     <div
@@ -153,7 +152,8 @@ function ComposerPage() {
             errors={errors}
           />
           <div className="note-text-input__hint">
-            Format: one measure per line, pairs of <code>&lt;pitch&gt; &lt;duration&gt;</code>.  
+            Format: one measure per line, pairs of{" "}
+            <code>&lt;pitch&gt; &lt;duration&gt;</code>.  
             Example:
             <br />
             <code>C4 q D4 q E4 h</code>
@@ -171,6 +171,8 @@ function ComposerPage() {
             onLoad={loadFromLibrary}
             onDelete={deleteFromLibrary}
             canSave={canSave}
+            currentId={currentId}
+            isDirty={isDirty}
           />
         </div>
       </section>
