@@ -15,6 +15,7 @@ interface Event {
   timeSeconds: number;
   durationSeconds: number;
   pitch: string;
+  noteId: string;
 }
 
 function buildSchedule(comp: Composition, tempo: number): Event[] {
@@ -30,6 +31,7 @@ function buildSchedule(comp: Composition, tempo: number): Event[] {
         timeSeconds: beatPos * secPerBeat,
         durationSeconds: beats * secPerBeat,
         pitch: note.pitch,
+        noteId: note.id,
       });
       beatPos += beats;
     }
@@ -45,7 +47,11 @@ async function ensureSynth() {
   if (!synth) synth = new Tone.Synth().toDestination();
 }
 
-export async function playComposition(comp: Composition, tempo: number) {
+export async function playComposition(
+  comp: Composition,
+  tempo: number,
+  onNoteChange?: (noteId: string | null) => void
+) {
   if (!comp || comp.measures.length === 0) return;
 
   await ensureSynth();
@@ -58,12 +64,20 @@ export async function playComposition(comp: Composition, tempo: number) {
   transport.bpm.value = tempo;
 
   const events = buildSchedule(comp, tempo);
+  if (events.length === 0) return;
 
   for (const ev of events) {
     transport.schedule((time) => {
+      if (onNoteChange) onNoteChange(ev.noteId);
       synth!.triggerAttackRelease(ev.pitch, ev.durationSeconds, time);
     }, ev.timeSeconds);
   }
+
+  // Clear highlight at the end
+  const last = events[events.length - 1];
+  transport.scheduleOnce(() => {
+    if (onNoteChange) onNoteChange(null);
+  }, last.timeSeconds + last.durationSeconds);
 
   transport.start();
 }
@@ -73,8 +87,9 @@ export function pausePlayback() {
   transport.pause();
 }
 
-export function stopPlayback() {
+export function stopPlayback(onNoteChange?: (noteId: string | null) => void) {
   const transport = Tone.getTransport();
   transport.stop();
   transport.position = 0;
+  if (onNoteChange) onNoteChange(null);
 }
