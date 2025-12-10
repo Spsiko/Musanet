@@ -5,7 +5,7 @@
 
 .staff-view {
   &__canvas-placeholder {
-    height: 260px;
+    height: vars.$staff-height;
     border-radius: vars.$radius-md;
     border: 1px dashed vars.$color-border-strong;
     background: vars.$color-surface;
@@ -15,7 +15,7 @@
     text-align: center;
     padding: vars.$spacing-md;
 
-     svg {
+    svg {
       width: 100%;
       height: 100%;
     }

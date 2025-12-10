@@ -5,6 +5,8 @@
 
 .transport-controls {
   display: flex;
+  justify-content: flex-start; // or center;
+  align-items: center;
   gap: vars.$spacing-sm;
   margin-bottom: vars.$spacing-md;
 

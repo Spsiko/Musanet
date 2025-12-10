@@ -46,7 +46,9 @@
 
   &__title {
     font-size: vars.$font-size-sm;
+    word-break: break-word;
   }
+
 
   &__date {
     font-size: vars.$font-size-xs;

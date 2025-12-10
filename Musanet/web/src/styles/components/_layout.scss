@@ -3,13 +3,72 @@
 @use "../utils/variables" as vars;
 @use "../utils/mixins";
 
+/* Page shell layout */
+
+.app-root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: vars.$color-bg;
+}
+
+.app-main {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  padding: vars.$spacing-lg vars.$spacing-md;
+  box-sizing: border-box;
+}
+
+/* Center the composer content but keep header/footer full width */
 .app-container {
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
+  box-sizing: border-box;
 }
 
+/* Header & footer */
+
+.app-header {
+  width: 100%;
+  box-sizing: border-box;
+  @include mixins.card;
+  padding: vars.$spacing-sm vars.$spacing-lg;
+  margin: 0 0 vars.$spacing-lg;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: vars.$color-surface-alt;
+}
+
+.app-header__title {
+  font-size: vars.$font-size-lg;
+}
+
+.app-header__subtitle {
+  font-size: vars.$font-size-sm;
+  color: vars.$color-muted;
+}
+
+.app-footer {
+  width: 100%;
+  box-sizing: border-box;
+  @include mixins.card;
+  padding: vars.$spacing-sm vars.$spacing-lg;
+  margin-top: vars.$spacing-md;
+  font-size: vars.$font-size-xs;
+  color: vars.$color-muted;
+  text-align: center;
+  background: vars.$color-surface-alt;
+}
+
+/* Composer page layout */
+
 .composer-page {
+  width: 100%;
+
   &__top {
     display: grid;
     grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
@@ -57,31 +116,10 @@
   }
 }
 
-.app-header {
-  @include mixins.card;
-  padding: vars.$spacing-sm vars.$spacing-lg;
-  margin-bottom: vars.$spacing-lg;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: vars.$color-surface-alt;
-}
+/* Responsive tweaks */
 
-.app-header__title {
-  font-size: vars.$font-size-lg;
-}
-
-.app-header__subtitle {
-  font-size: vars.$font-size-sm;
-  color: vars.$color-muted;
-}
-
-.app-footer {
-  @include mixins.card;
-  padding: vars.$spacing-sm vars.$spacing-lg;
-  margin-top: vars.$spacing-lg;
-  font-size: vars.$font-size-xs;
-  color: vars.$color-muted;
-  text-align: right;
-  background: vars.$color-surface-alt;
+@media (max-width: 900px) {
+  .composer-page__top {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }

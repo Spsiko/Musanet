@@ -1,6 +1,7 @@
 /* Styles partially generated with AI assistance. */
 
 @use "utils/variables" as vars;
+@use "utils/mixins";
 @use "components/layout";
 @use "components/input";
 @use "components/staff";
@@ -18,10 +19,16 @@
   box-sizing: border-box;
 }
 
+html {
+  height: 100%;
+}
+
 body {
   margin: 0;
+  min-height: 100%;
   background: vars.$color-bg;
   color: vars.$color-text;
+  line-height: 1.4;
 }
 
 .app-root {
