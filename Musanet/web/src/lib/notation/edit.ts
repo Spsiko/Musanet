@@ -1,7 +1,7 @@
 /* Editing helpers partially generated with AI assistance. */
 
 import type { Composition, Note, NoteDuration } from "./model";
-import { stepPitchByDegreeClamped } from "./pitch";
+import { stepPitchByDegree, clampPitch } from "./pitch";
 
 export function deleteNoteById(comp: Composition, id: string): Composition {
   const measures = comp.measures
@@ -36,25 +36,28 @@ export function appendNoteToLastMeasure(
  * Update a single note's pitch by diatonic steps (e.g., ArrowUp/Down).
  */
 export function updateNotePitchById(
-  comp: Composition,
-  id: string,
+  composition: Composition,
+  noteId: string,
   steps: number
 ): Composition {
-  if (steps === 0) return comp;
+  return {
+    ...composition,
+    measures: composition.measures.map((measure) => ({
+      ...measure,
+      notes: measure.notes.map((note: Note) => {
+        if (note.id !== noteId) return note;
 
-  const measures = comp.measures.map((m) => ({
-    ...m,
-    notes: m.notes.map((n) =>
-      n.id === id
-        ? {
-            ...n,
-            pitch: stepPitchByDegreeClamped(n.pitch, steps),
-          }
-        : n
-    ),
-  }));
+        // Rests do not change pitch with arrow keys
+        if (note.isRest) return note;
 
-  return { ...comp, measures };
+        const nextPitch = clampPitch(stepPitchByDegree(note.pitch, steps));
+        return {
+          ...note,
+          pitch: nextPitch,
+        };
+      }),
+    })),
+  };
 }
 
 /**

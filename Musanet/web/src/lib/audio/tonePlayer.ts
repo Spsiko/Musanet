@@ -2,7 +2,7 @@
 
 import * as Tone from "tone";
 import type { Composition } from "../notation/model";
-import { buildSchedule } from "./scheduler";
+import { buildSchedule, type PlaybackEvent } from "./scheduler";
 
 let synth: Tone.Synth | null = null;
 
@@ -22,7 +22,7 @@ function getTransport() {
  *
  * - Prepares Tone.Transport
  * - Uses `buildSchedule` to derive events
- * - Calls `onNoteChange` as each note starts and when playback ends
+ * - Calls `onNoteChange` as each note (or rest) starts and when playback ends
  */
 export async function playComposition(
   comp: Composition,
@@ -41,17 +41,25 @@ export async function playComposition(
   transport.position = 0;
   transport.bpm.value = tempo;
 
-  const events = buildSchedule(comp, tempo);
+  const events: PlaybackEvent[] = buildSchedule(comp, tempo);
   if (events.length === 0) return;
 
+  // Schedule all events
   for (const ev of events) {
     transport.schedule((time) => {
-      if (onNoteChange) onNoteChange(ev.noteId);
-      synth!.triggerAttackRelease(ev.pitch, ev.durationSeconds, time);
+      // Highlight everything (notes *and* rests)
+      if (onNoteChange) {
+        onNoteChange(ev.noteId ?? null);
+      }
+
+      // Only play audio for non-rest events with a valid pitch
+      if (!ev.isRest && ev.pitch) {
+        synth!.triggerAttackRelease(ev.pitch, ev.durationSeconds, time);
+      }
     }, ev.timeSeconds);
   }
 
-  // Clear highlight at the end
+  // Clear highlight at the end of the last event
   const last = events[events.length - 1];
   transport.scheduleOnce(() => {
     if (onNoteChange) onNoteChange(null);

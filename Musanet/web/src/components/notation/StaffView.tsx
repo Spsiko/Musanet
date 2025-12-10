@@ -1,7 +1,12 @@
 /* Component partially generated with AI assistance. */
 
 import React, { useEffect, useRef } from "react";
-import type { Composition, Note, NoteDuration } from "../../lib/notation/model";
+import type {
+  Composition,
+  Note,
+  NoteDuration,
+  Measure,
+} from "../../lib/notation/model";
 import {
   Renderer,
   Stave,
@@ -45,12 +50,22 @@ function parsePitch(pitch: string): { key: string; accidental: string | null } {
 }
 
 function noteToVexflow(note: Note) {
-  const { key, accidental } = parsePitch(note.pitch);
-  const vfDuration = VF_DURATION_MAP[note.duration] ?? "q";
+  const vfDurationBase = VF_DURATION_MAP[note.duration] ?? "q";
 
+  // RESTS
+  if (note.isRest) {
+    // Use a dummy key; VexFlow only cares about duration + "r"
+    return new StaveNote({
+      keys: ["b/4"],
+      duration: vfDurationBase + "r",
+    });
+  }
+
+  // NORMAL PITCHED NOTES
+  const { key, accidental } = parsePitch(note.pitch);
   const vfNote = new StaveNote({
     keys: [key],
-    duration: vfDuration,
+    duration: vfDurationBase,
   });
 
   if (accidental) {
@@ -62,8 +77,16 @@ function noteToVexflow(note: Note) {
 
 /** Render an empty staff so the user can see/click even with no notes. */
 function renderEmptyStaff(container: HTMLDivElement) {
-  const { width, height, leftMargin, topY, measureWidth } =
-    computeStaffDimensions(container.clientWidth || undefined, 1);
+  const dummyMeasure: Measure = {
+    id: "empty-1",
+    timeSignature: "4/4",
+    notes: [],
+  };
+
+  const { width, height, leftMargin, topY, measureWidths } =
+    computeStaffDimensions(container.clientWidth, [dummyMeasure]);
+
+  const measureWidth = measureWidths[0] ?? 200;
 
   const renderer = new Renderer(container, Renderer.Backends.SVG);
   renderer.resize(width, height);
@@ -90,8 +113,8 @@ function renderCompositionToContainer(
     return;
   }
 
-  const { width, height, leftMargin, topY, measureWidth } =
-    computeStaffDimensions(container.clientWidth || undefined, measures.length);
+  const { width, height, leftMargin, topY, measureWidths } =
+    computeStaffDimensions(container.clientWidth, measures);
 
   const renderer = new Renderer(container, Renderer.Backends.SVG);
   renderer.resize(width, height);
@@ -103,10 +126,14 @@ function renderCompositionToContainer(
 
   // Build staves, voices, and flattened note list
   measures.forEach((measure, index) => {
-    const x = leftMargin + index * measureWidth;
+    const x =
+      leftMargin +
+      measureWidths.slice(0, index).reduce((sum, w) => sum + w, 0);
+
+    const measureWidth = measureWidths[index];
 
     const stave = new Stave(x, topY, measureWidth);
-   if (index === 0) {
+    if (index === 0) {
       stave.addClef("treble");
       stave.addTimeSignature(measure.timeSignature);
     } else {
@@ -136,6 +163,7 @@ function renderCompositionToContainer(
   staves.forEach((stave, index) => {
     const voice = voices[index];
     const formatter = new Formatter();
+    const measureWidth = measureWidths[index];
     formatter.joinVoices([voice]).format([voice], measureWidth - 20);
     voice.draw(context, stave);
   });
@@ -206,7 +234,7 @@ function StaffView({
       return;
     }
 
-   if (onBackgroundClick && containerRef.current) {
+    if (onBackgroundClick && containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect();
       const clickY = e.clientY - rect.top;
       const centerY = rect.height / 2;
