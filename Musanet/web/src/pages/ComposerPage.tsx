@@ -14,7 +14,6 @@ import {
   updateNoteDurationById,
 } from "../lib/notation/edit";
 
-
 function ComposerPage() {
   const {
     rawInput,
@@ -30,15 +29,17 @@ function ComposerPage() {
     loadFromLibrary,
     deleteFromLibrary,
     updateComposition,
+    currentId,
+    isDirty,
   } = useComposerState();
 
   const [activeNoteId, setActiveNoteId] = useState<string | null>(null);
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
   const [currentDuration, setCurrentDuration] = useState<NoteDuration>("q");
+  const [isRestMode, setIsRestMode] = useState(false);
 
   const hasComposition = !!composition && composition.measures.length > 0;
   const hasErrors = errors.length > 0;
-  const canPlay = hasComposition && !hasErrors;
   const canSave = hasComposition && !hasErrors;
 
   const durationOptions: { label: string; value: NoteDuration }[] = [
@@ -49,7 +50,6 @@ function ComposerPage() {
     { label: "s", value: "s" },
   ];
 
-
   const handleSelectNote = (noteId: string) => {
     setSelectedNoteId(noteId);
   };
@@ -59,21 +59,36 @@ function ComposerPage() {
   };
 
   const handleBackgroundClick = (pitch: string) => {
-    // If there is no composition yet, create the first note via text.
+    // If there is no composition yet, create the first note/rest via text.
     if (!composition) {
-      setRawInput(`${pitch} ${currentDuration}`);
+      if (isRestMode) {
+        setRawInput(`R ${currentDuration}`);
+      } else {
+        setRawInput(`${pitch} ${currentDuration}`);
+      }
       return;
     }
 
     updateComposition((comp: Composition): Composition => {
-      const newNote = {
-        id: `ui-${Math.random().toString(36).slice(2)}`,
-        pitch,
-        duration: currentDuration,
-      };
+      const id = `ui-${Math.random().toString(36).slice(2)}`;
+
+      const newNote = isRestMode
+        ? {
+            id,
+            // Pitch is mostly ignored for rests, but model requires one.
+            pitch: "C4",
+            duration: currentDuration,
+            isRest: true as const,
+          }
+        : {
+            id,
+            pitch,
+            duration: currentDuration,
+          };
+
       return appendNoteToLastMeasure(comp, newNote);
     });
-  };;
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (!selectedNoteId) return;
@@ -106,7 +121,7 @@ function ComposerPage() {
 
     // Change duration with number keys 1–5
     // 1: whole, 2: half, 3: quarter, 4: eighth, 5: sixteenth
-    const durationMap: Record<string, "w" | "h" | "q" | "e" | "s"> = {
+    const durationMap: Record<string, NoteDuration> = {
       "1": "w",
       "2": "h",
       "3": "q",
@@ -126,7 +141,6 @@ function ComposerPage() {
       setCurrentDuration(newDuration);
     }
   };
-
 
   return (
     <div
@@ -153,7 +167,8 @@ function ComposerPage() {
             errors={errors}
           />
           <div className="note-text-input__hint">
-            Format: one measure per line, pairs of <code>&lt;pitch&gt; &lt;duration&gt;</code>.  
+            Format: one measure per line, pairs of{" "}
+            <code>&lt;pitch|R&gt; &lt;duration&gt;</code>.  
             Example:
             <br />
             <code>C4 q D4 q E4 h</code>
@@ -161,6 +176,10 @@ function ComposerPage() {
             With time signature:
             <br />
             <code>3/4 | C4 q D4 q E4 q</code>
+            <br />
+            With rests:
+            <br />
+            <code>4/4 | C4 q R q D4 q R q</code>
           </div>
         </div>
 
@@ -171,6 +190,8 @@ function ComposerPage() {
             onLoad={loadFromLibrary}
             onDelete={deleteFromLibrary}
             canSave={canSave}
+            currentId={currentId}
+            isDirty={isDirty}
           />
         </div>
       </section>
@@ -186,12 +207,14 @@ function ComposerPage() {
                 type="button"
                 className={
                   "duration-toolbar__button" +
-                  (currentDuration === opt.value
+                  (currentDuration === opt.value && !isRestMode
                     ? " duration-toolbar__button--active"
                     : "")
                 }
                 onClick={() => {
-                  // If a note is selected, change its duration too
+                  // Switch to pitched-note mode for this duration
+                  setIsRestMode(false);
+
                   if (selectedNoteId && composition) {
                     updateComposition((comp: Composition): Composition => {
                       return updateNoteDurationById(
@@ -207,6 +230,20 @@ function ComposerPage() {
                 {opt.label}
               </button>
             ))}
+
+            {/* Rest toggle */}
+            <button
+              type="button"
+              className={
+                "duration-toolbar__button" +
+                (isRestMode ? " duration-toolbar__button--active" : "")
+              }
+              onClick={() => {
+                setIsRestMode((prev) => !prev);
+              }}
+            >
+              R
+            </button>
           </div>
           <StaffView
             composition={composition}

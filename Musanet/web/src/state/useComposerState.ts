@@ -32,6 +32,15 @@ export interface UseComposerState {
   loadFromLibrary: (id: string) => void;
   deleteFromLibrary: (id: string) => void;
   updateComposition: (fn: (c: Composition) => Composition) => void;
+  currentId: string | null;
+  isDirty: boolean;
+}
+
+interface SavedSnapshot {
+  id: string | null;
+  rawInput: string;
+  tempo: number;
+  title: string;
 }
 
 export function useComposerState(): UseComposerState {
@@ -42,6 +51,14 @@ export function useComposerState(): UseComposerState {
   const [title, setTitle] = useState("Untitled piece");
   const [currentId, setCurrentId] = useState<string | null>(null);
   const [savedItems, setSavedItems] = useState<SavedSummary[]>([]);
+
+  // Last "saved" state (or loaded-from-library state)
+  const [lastSnapshot, setLastSnapshot] = useState<SavedSnapshot>({
+    id: null,
+    rawInput,
+    tempo,
+    title,
+  });
 
   // load library once
   useEffect(() => {
@@ -60,13 +77,23 @@ export function useComposerState(): UseComposerState {
     });
   }, [rawInput, tempo, title]);
 
+  // Derived dirty flag: any difference from lastSnapshot
+  const isDirty = useMemo(
+    () =>
+      rawInput !== lastSnapshot.rawInput ||
+      tempo !== lastSnapshot.tempo ||
+      title !== lastSnapshot.title ||
+      currentId !== lastSnapshot.id,
+    [rawInput, tempo, title, currentId, lastSnapshot]
+  );
+
   const updateComposition = (fn: (c: Composition) => Composition): void => {
     if (!composition) return;
     const updated = fn(composition);
     const text = compositionToText(updated);
     setRawInput(text);
   };
-  
+
   const saveCurrent = () => {
     if (!rawInput.trim()) return;
 
@@ -85,10 +112,22 @@ export function useComposerState(): UseComposerState {
       }))
     );
 
-    if (!currentId && updatedList.length > 0) {
+    // Determine the effective ID after save
+    let effectiveId: string | null = currentId;
+
+    if (!effectiveId && updatedList.length > 0) {
       const newest = updatedList[0];
+      effectiveId = newest.id;
       setCurrentId(newest.id);
     }
+
+    // Snapshot the just-saved state so dirty flag resets
+    setLastSnapshot({
+      id: effectiveId,
+      rawInput,
+      tempo,
+      title,
+    });
   };
 
   const loadFromLibrary = (id: string) => {
@@ -99,6 +138,14 @@ export function useComposerState(): UseComposerState {
     setTitle(rec.title);
     setTempo(rec.tempo);
     setRawInput(rec.rawInput);
+
+    // Loaded state is "clean"
+    setLastSnapshot({
+      id: rec.id,
+      rawInput: rec.rawInput,
+      tempo: rec.tempo,
+      title: rec.title,
+    });
   };
 
   const deleteFromLibrary = (id: string) => {
@@ -113,6 +160,13 @@ export function useComposerState(): UseComposerState {
 
     if (currentId === id) {
       setCurrentId(null);
+      // No saved backing store for current editor now; mark as unsaved.
+      setLastSnapshot((prev) => ({
+        id: null,
+        rawInput,
+        tempo,
+        title,
+      }));
     }
   };
 
@@ -130,5 +184,7 @@ export function useComposerState(): UseComposerState {
     loadFromLibrary,
     deleteFromLibrary,
     updateComposition,
+    currentId,
+    isDirty,
   };
 }

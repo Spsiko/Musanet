@@ -75,3 +75,19 @@
     color: vars.$color-muted;
   }
 }
+
+.composition-list__current-label {
+  font-size: 0.8rem;
+  color: vars.$color-muted;
+}
+
+.composition-list__item--current {
+  border-color: vars.$color-accent;
+  background: rgba(vars.$color-accent, 0.06); // adjust if you don't have -rgb
+}
+
+.composition-list__dirty-indicator {
+  color: vars.$color-accent;
+  font-weight: 600;
+}
+

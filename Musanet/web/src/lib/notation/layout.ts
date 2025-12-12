@@ -1,65 +1,108 @@
-// Layout helpers partially generated with AI assistance.
+/* Layout helpers partially generated with AI assistance. */
 
-export interface StaffLayoutConfig {
-  /** Minimum SVG height for the staff area in pixels. */
-  minHeight: number;
-  /** Horizontal margin on each side in pixels. */
-  marginX: number;
-  /** Top offset for the staff in pixels. */
-  marginTop: number;
-  /** Minimum width for a single measure in pixels. */
-  minMeasureWidth: number;
-  /** Fallback width if container width is 0 or undefined. */
-  fallbackWidth: number;
-}
-
-export const STAFF_LAYOUT: StaffLayoutConfig = {
-  minHeight: 260,
-  marginX: 10,
-  marginTop: 40,
-  // bump this so dense measures have room
-  minMeasureWidth: 500,
-  fallbackWidth: 700,
-};
+import type { Measure, NoteDuration } from "./model";
 
 /**
- * Compute concrete pixel dimensions for the staff based on the container width
- * and number of measures.
+ * Basic beat mapping used for layout.
+ * This is intentionally duplicated from playback so layout
+ * doesn't depend on the playback module.
+ */
+const DURATION_BEATS: Record<NoteDuration, number> = {
+  w: 4,
+  h: 2,
+  q: 1,
+  e: 0.5,
+  s: 0.25,
+};
+
+export interface StaffDimensions {
+  width: number;
+  height: number;
+  leftMargin: number;
+  topY: number;
+  measureWidths: number[];
+}
+
+// Tunable layout constants
+const STAFF_HEIGHT = 260;
+const STAFF_TOP_Y = 80;
+const LEFT_MARGIN = 10;
+const RIGHT_MARGIN = 10;
+const MIN_MEASURE_WIDTH = 140; // never let a measure be thinner than this
+const PX_PER_COMPLEXITY = 32;  // how aggressively complexity translates to width
+
+/**
+ * Rough "complexity" score for a measure:
+ * - More beats => more width
+ * - More notes => more width (even if beats are the same)
+ */
+function measureComplexity(measure: Measure): number {
+  const beats = measure.notes.reduce((sum, note) => {
+    const b = DURATION_BEATS[note.duration] ?? 1;
+    return sum + b;
+  }, 0);
+
+  const noteCount = measure.notes.length;
+
+  // Avoid zero, even for empty measures
+  const base = beats || 1;
+
+  // Add a small bump from note count so dense measures get more room
+  const complexity = base + noteCount * 0.3;
+
+  return Math.max(complexity, 1);
+}
+
+/**
+ * Compute overall staff dimensions and per-measure widths.
+ *
+ * - Each measure gets a base width from its complexity.
+ * - All measures are then scaled to fit at least the container width.
+ * - This allows horizontal scroll when things get dense, instead of squashing.
  */
 export function computeStaffDimensions(
-  containerWidth: number | undefined,
-  measureCount: number
-) {
-  const {
-    minHeight,
-    marginX,
-    marginTop,
-    minMeasureWidth,
-    fallbackWidth,
-  } = STAFF_LAYOUT;
+  containerWidth: number,
+  measures: Measure[]
+): StaffDimensions {
+  const safeContainerWidth = Math.max(containerWidth || 0, 300);
+  const measureCount = Math.max(measures.length, 1);
 
-  const safeContainerWidth =
-    typeof containerWidth === "number" && containerWidth > 0
-      ? containerWidth
-      : fallbackWidth;
+  // Compute complexity & base width for each measure
+  const complexities = measures.map(measureComplexity);
 
-  const safeMeasureCount = Math.max(1, measureCount);
+  // If somehow we got no measures, fake one
+  if (complexities.length === 0) {
+    complexities.push(1);
+  }
 
-  // Give each measure more horizontal room so notes don’t overlap.
-  const baseMeasureWidth = Math.max(minMeasureWidth, 180);
+  const baseWidths = complexities.map((c) =>
+    Math.max(MIN_MEASURE_WIDTH, c * PX_PER_COMPLEXITY)
+  );
 
-  const contentWidth = marginX * 2 + baseMeasureWidth * safeMeasureCount;
+  const totalBaseWidth = baseWidths.reduce((sum, w) => sum + w, 0);
 
-  // SVG can be wider than the container; scrollbar handles that.
-  const width = Math.max(safeContainerWidth, contentWidth);
-  const height = minHeight;
+  // Content width is the sum of base measure widths
+  const contentWidth = totalBaseWidth;
+
+  // Final SVG width: at least the container, plus margins
+  const availableContentWidth = Math.max(
+    contentWidth,
+    safeContainerWidth - LEFT_MARGIN - RIGHT_MARGIN
+  );
+
+  const scaleFactor =
+    totalBaseWidth > 0 ? availableContentWidth / totalBaseWidth : 1;
+
+  const measureWidths = baseWidths.map((w) => w * scaleFactor);
+
+  const finalWidth =
+    measureWidths.reduce((sum, w) => sum + w, 0) + LEFT_MARGIN + RIGHT_MARGIN;
 
   return {
-    width,
-    height,
-    topY: marginTop,
-    leftMargin: marginX,
-    rightMargin: marginX,
-    measureWidth: baseMeasureWidth,
+    width: finalWidth,
+    height: STAFF_HEIGHT,
+    leftMargin: LEFT_MARGIN,
+    topY: STAFF_TOP_Y,
+    measureWidths,
   };
 }

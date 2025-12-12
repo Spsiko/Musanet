@@ -1,5 +1,4 @@
-/* Schedule builder partially generated with AI assistance. But like barely this time, unless I change this later*/
-
+// Schedule builder partially generated with AI assistance.
 import type { Composition, NoteDuration } from "../notation/model";
 
 /**
@@ -17,15 +16,17 @@ export const DURATION_BEATS: Record<NoteDuration, number> = {
 export interface PlaybackEvent {
   timeSeconds: number;
   durationSeconds: number;
-  pitch: string;
-  noteId: string;
+  pitch: string | null;
+  noteId: string | null;
+  isRest?: boolean;
 }
 
 /**
  * Build a flat, time-ordered schedule of playback events
  * from a Composition and a tempo in BPM.
  *
- * Pure function: perfect for unit tests.
+ * Rests are included as events (for highlighting) but have
+ * pitch = null and isRest = true, so Tone produces no sound.
  */
 export function buildSchedule(
   comp: Composition,
@@ -43,12 +44,25 @@ export function buildSchedule(
       const timeSeconds = beatPos * secPerBeat;
       const durationSeconds = beats * secPerBeat;
 
-      events.push({
-        timeSeconds,
-        durationSeconds,
-        pitch: note.pitch,
-        noteId: note.id,
-      });
+      if (note.isRest) {
+        // Silent event, still present in timeline for highlighting
+        events.push({
+          timeSeconds,
+          durationSeconds,
+          pitch: null,
+          noteId: note.id,
+          isRest: true,
+        });
+      } else {
+        // Normal pitched note
+        events.push({
+          timeSeconds,
+          durationSeconds,
+          pitch: note.pitch,
+          noteId: note.id,
+          isRest: false,
+        });
+      }
 
       beatPos += beats;
     }
