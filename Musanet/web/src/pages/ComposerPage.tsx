@@ -29,6 +29,8 @@ function ComposerPage() {
     loadFromLibrary,
     deleteFromLibrary,
     updateComposition,
+    exportLibrary,
+    importLibrary,
     currentId,
     isDirty,
   } = useComposerState();
@@ -38,9 +40,11 @@ function ComposerPage() {
   const [currentDuration, setCurrentDuration] = useState<NoteDuration>("q");
   const [isRestMode, setIsRestMode] = useState(false);
 
-  const hasComposition = !!composition && composition.measures.length > 0;
+  // const hasComposition = !!composition && composition.measures.length > 0;
   const hasErrors = errors.length > 0;
-  const canSave = hasComposition && !hasErrors;
+
+  // Saving should work even when there are errors (draft saving).
+  const canSave = rawInput.trim().length > 0;
 
   const durationOptions: { label: string; value: NoteDuration }[] = [
     { label: "w", value: "w" },
@@ -75,7 +79,6 @@ function ComposerPage() {
       const newNote = isRestMode
         ? {
             id,
-            // Pitch is mostly ignored for rests, but model requires one.
             pitch: "C4",
             duration: currentDuration,
             isRest: true as const,
@@ -120,7 +123,6 @@ function ComposerPage() {
     }
 
     // Change duration with number keys 1–5
-    // 1: whole, 2: half, 3: quarter, 4: eighth, 5: sixteenth
     const durationMap: Record<string, NoteDuration> = {
       "1": "w",
       "2": "h",
@@ -143,11 +145,7 @@ function ComposerPage() {
   };
 
   return (
-    <div
-      className="composer-page"
-      tabIndex={0}
-      onKeyDown={handleKeyDown}
-    >
+    <div className="composer-page" tabIndex={0} onKeyDown={handleKeyDown}>
       {/* Top: input + saved compositions */}
       <section className="composer-page__top">
         <div className="composer-page__input">
@@ -161,15 +159,12 @@ function ComposerPage() {
               placeholder="Untitled piece"
             />
           </div>
-          <NoteTextInput
-            value={rawInput}
-            onChange={setRawInput}
-            errors={errors}
-          />
+
+          <NoteTextInput value={rawInput} onChange={setRawInput} errors={errors} />
+
           <div className="note-text-input__hint">
             Format: one measure per line, pairs of{" "}
-            <code>&lt;pitch|R&gt; &lt;duration&gt;</code>.  
-            Example:
+            <code>&lt;pitch|R&gt; &lt;duration&gt;</code>. Example:
             <br />
             <code>C4 q D4 q E4 h</code>
             <br />
@@ -184,6 +179,46 @@ function ComposerPage() {
         </div>
 
         <div className="composer-page__library">
+          <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.5rem" }}>
+            <button
+              type="button"
+              onClick={() => {
+                const json = exportLibrary();
+                const blob = new Blob([json], { type: "application/json" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `musanet-library-${new Date().toISOString().slice(0, 10)}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+              }}
+            >
+              Export library
+            </button>
+
+            <label style={{ display: "inline-block" }}>
+              <input
+                type="file"
+                accept="application/json"
+                style={{ display: "none" }}
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  const text = await file.text();
+                  const res = importLibrary(text);
+                  if (!res.ok) {
+                    alert(res.error);
+                  } else {
+                    alert(`Imported: ${res.imported}, overwritten: ${res.overwritten}, total: ${res.total}`);
+                  }
+                  e.target.value = "";
+                }}
+              />
+              <span style={{ cursor: "pointer", textDecoration: "underline" }}>
+                Import library
+              </span>
+            </label>
+          </div>
           <CompositionList
             items={savedItems}
             onSaveCurrent={saveCurrent}
@@ -212,16 +247,11 @@ function ComposerPage() {
                     : "")
                 }
                 onClick={() => {
-                  // Switch to pitched-note mode for this duration
                   setIsRestMode(false);
 
                   if (selectedNoteId && composition) {
                     updateComposition((comp: Composition): Composition => {
-                      return updateNoteDurationById(
-                        comp,
-                        selectedNoteId,
-                        opt.value
-                      );
+                      return updateNoteDurationById(comp, selectedNoteId, opt.value);
                     });
                   }
                   setCurrentDuration(opt.value);
@@ -231,20 +261,18 @@ function ComposerPage() {
               </button>
             ))}
 
-            {/* Rest toggle */}
             <button
               type="button"
               className={
                 "duration-toolbar__button" +
                 (isRestMode ? " duration-toolbar__button--active" : "")
               }
-              onClick={() => {
-                setIsRestMode((prev) => !prev);
-              }}
+              onClick={() => setIsRestMode((prev) => !prev)}
             >
               R
             </button>
           </div>
+
           <StaffView
             composition={composition}
             activeNoteId={activeNoteId}
@@ -268,6 +296,13 @@ function ComposerPage() {
           />
         </div>
       </section>
+
+      {/* Tiny “yes you have errors” indicator without blocking your life */}
+      {hasErrors && (
+        <div style={{ marginTop: "0.5rem", fontSize: "0.8rem", opacity: 0.8 }}>
+          Parser notes: {errors.length} issue(s). Saving is allowed; playback rules can be relaxed next.
+        </div>
+      )}
     </div>
   );
 }

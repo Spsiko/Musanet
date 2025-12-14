@@ -9,13 +9,16 @@ import {
   saveCompositionToLibrary,
   loadCompositionFromLibrary,
   deleteCompositionFromLibrary,
-  type StoredComposition,
+  type StoredCompositionV2,
+  exportLibraryToJSON,
+  importLibraryFromJSON,
 } from "../lib/storage/compositionsStore";
 
 export interface SavedSummary {
   id: string;
   title: string;
   updatedAt: string;
+  errorCount: number;
 }
 
 export interface UseComposerState {
@@ -32,6 +35,8 @@ export interface UseComposerState {
   loadFromLibrary: (id: string) => void;
   deleteFromLibrary: (id: string) => void;
   updateComposition: (fn: (c: Composition) => Composition) => void;
+  exportLibrary: () => string;
+  importLibrary: (jsonText: string) => { ok: true; imported: number; overwritten: number; total: number } | { ok: false; error: string };
   currentId: string | null;
   isDirty: boolean;
 }
@@ -41,6 +46,15 @@ interface SavedSnapshot {
   rawInput: string;
   tempo: number;
   title: string;
+}
+
+function toSummary(item: StoredCompositionV2): SavedSummary {
+  return {
+    id: item.id,
+    title: item.title,
+    updatedAt: item.updatedAt,
+    errorCount: item.lastErrorCount ?? 0,
+  };
 }
 
 export function useComposerState(): UseComposerState {
@@ -62,11 +76,7 @@ export function useComposerState(): UseComposerState {
 
   // load library once
   useEffect(() => {
-    const items = listCompositions().map((item) => ({
-      id: item.id,
-      title: item.title,
-      updatedAt: item.updatedAt,
-    }));
+    const items = listCompositions().map(toSummary);
     setSavedItems(items);
   }, []);
 
@@ -87,6 +97,21 @@ export function useComposerState(): UseComposerState {
     [rawInput, tempo, title, currentId, lastSnapshot]
   );
 
+  const exportLibrary = () => {
+    return exportLibraryToJSON();
+  };
+
+  const importLibrary = (jsonText: string) => {
+    const result = importLibraryFromJSON(jsonText);
+    if (result.ok) {
+      // refresh list after import
+      const items = listCompositions().map(toSummary);
+      setSavedItems(items);
+    }
+    return result;
+  };
+
+
   const updateComposition = (fn: (c: Composition) => Composition): void => {
     if (!composition) return;
     const updated = fn(composition);
@@ -95,6 +120,7 @@ export function useComposerState(): UseComposerState {
   };
 
   const saveCurrent = () => {
+    // Allow saving drafts even with parser errors.
     if (!rawInput.trim()) return;
 
     const updatedList = saveCompositionToLibrary({
@@ -102,15 +128,10 @@ export function useComposerState(): UseComposerState {
       title,
       rawInput,
       tempo,
+      errors,
     });
 
-    setSavedItems(
-      updatedList.map((item: StoredComposition) => ({
-        id: item.id,
-        title: item.title,
-        updatedAt: item.updatedAt,
-      }))
-    );
+    setSavedItems(updatedList.map(toSummary));
 
     // Determine the effective ID after save
     let effectiveId: string | null = currentId;
@@ -150,23 +171,17 @@ export function useComposerState(): UseComposerState {
 
   const deleteFromLibrary = (id: string) => {
     const updated = deleteCompositionFromLibrary(id);
-    setSavedItems(
-      updated.map((item: StoredComposition) => ({
-        id: item.id,
-        title: item.title,
-        updatedAt: item.updatedAt,
-      }))
-    );
+    setSavedItems(updated.map(toSummary));
 
     if (currentId === id) {
       setCurrentId(null);
       // No saved backing store for current editor now; mark as unsaved.
-      setLastSnapshot((prev) => ({
+      setLastSnapshot({
         id: null,
         rawInput,
         tempo,
         title,
-      }));
+      });
     }
   };
 
@@ -184,6 +199,8 @@ export function useComposerState(): UseComposerState {
     loadFromLibrary,
     deleteFromLibrary,
     updateComposition,
+    exportLibrary,
+    importLibrary,
     currentId,
     isDirty,
   };

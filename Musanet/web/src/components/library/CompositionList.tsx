@@ -1,6 +1,6 @@
 /* Component partially generated with AI assistance. */
 
-import React from "react";
+//import React from "react";
 import type { SavedSummary } from "../../state/useComposerState";
 
 interface Props {
@@ -44,11 +44,7 @@ export default function CompositionList({
           className="composition-list__save-button"
           onClick={onSaveCurrent}
           disabled={!canSave}
-          title={
-            canSave
-              ? "Save the current editor state to the library"
-              : "Fix errors or add notes before saving"
-          }
+          title={canSave ? "Save the current editor state to the library" : "Nothing to save yet"}
         >
           Save current
         </button>
@@ -62,6 +58,8 @@ export default function CompositionList({
         <ul className="composition-list__items">
           {items.map((item) => {
             const isCurrent = item.id === currentId;
+            const hasErrors = (item.errorCount ?? 0) > 0;
+
             return (
               <li
                 key={item.id}
@@ -74,16 +72,21 @@ export default function CompositionList({
                   <div className="composition-list__title">
                     {item.title || "(Untitled)"}
                     {isCurrent && isDirty && (
-                      <span className="composition-list__dirty-indicator">
+                      <span className="composition-list__dirty-indicator"> *</span>
+                    )}
+                    {hasErrors && (
+                      <span
+                        className="composition-list__dirty-indicator"
+                        title={`${item.errorCount} parser issue(s) at last save`}
+                      >
                         {" "}
-                        *
+                        !
                       </span>
                     )}
                   </div>
-                  <div className="composition-list__date">
-                    {formatDate(item.updatedAt)}
-                  </div>
+                  <div className="composition-list__date">{formatDate(item.updatedAt)}</div>
                 </div>
+
                 <div className="composition-list__actions">
                   <button
                     type="button"
