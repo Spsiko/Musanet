@@ -1,6 +1,6 @@
 /* Component partially generated with AI assistance. */
 
-import React from "react";
+//import React from "react";
 import type { Composition } from "../../lib/notation/model";
 import {
   playComposition,
@@ -26,7 +26,9 @@ export default function TransportControls({
   onClearSelection,
 }: Props) {
   const hasComposition = !!composition && composition.measures.length > 0;
-  const canPlay = hasComposition && !hasErrors;
+
+  // Don’t block playback just because parsing produced errors.
+  const canPlay = hasComposition;
 
   const handlePlay = () => {
     if (!composition) return;
@@ -43,7 +45,7 @@ export default function TransportControls({
     stopPlayback(onActiveNoteChange);
     if (onClearSelection) onClearSelection();
   };
-  
+
   return (
     <div className="transport-controls">
       <button
@@ -51,6 +53,7 @@ export default function TransportControls({
         type="button"
         onClick={handlePlay}
         disabled={!canPlay}
+        title={hasErrors ? "Playback may be approximate (parser reported issues)" : undefined}
       >
         Play
       </button>
@@ -70,6 +73,7 @@ export default function TransportControls({
       >
         Stop
       </button>
+
       <span style={{ marginLeft: "0.75rem", fontSize: "0.8rem" }}>
         Tempo:{" "}
         <input
